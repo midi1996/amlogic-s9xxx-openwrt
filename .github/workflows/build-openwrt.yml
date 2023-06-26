@@ -325,6 +325,7 @@ jobs:
           kernel_usage: ${{ inputs.kernel_usage }}
           builder_name: ${{ inputs.builder_name }}
           gh_token: ${{ secrets.GH_TOKEN }}
+          openwrt_size: 2048
 
       - name: Upload the packaged OpenWrt
         uses: ncipollo/release-action@main
