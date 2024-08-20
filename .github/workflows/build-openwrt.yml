@@ -5,6 +5,8 @@
 
 name: Build OpenWrt
 
+runs-on: self-hosted
+
 on:
   repository_dispatch:
   workflow_dispatch:
