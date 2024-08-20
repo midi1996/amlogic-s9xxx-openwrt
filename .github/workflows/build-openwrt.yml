@@ -240,7 +240,7 @@ jobs:
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
-          bash -x
+          docker rmi $(docker images -q) 2>/dev/null | true
           [[ -n "${AGENT_TOOLSDIRECTORY}" ]] && sudo rm -rf "${AGENT_TOOLSDIRECTORY}"
           sudo rm -rf /usr/share/dotnet /etc/apt/sources.list.d /usr/local/lib/android 2>/dev/null
           sudo swapoff -a
@@ -259,6 +259,9 @@ jobs:
 
       - name: Create simulated physical disk
         run: |
+          sudo losetup -D
+          [[ -f "/root.img" ]] && sudo rm -rf /root.img
+          [[ -f "/mnt/mnt.img" ]] && sudo rm -rf /mnt/mnt.img
           mnt_size=$(expr $(df -h /mnt | tail -1 | awk '{print $4}' | sed 's/[[:alpha:]]//g' | sed 's/\..*//') - 1)
           root_size=$(expr $(df -h / | tail -1 | awk '{print $4}' | sed 's/[[:alpha:]]//g' | sed 's/\..*//') - 4)
           sudo truncate -s "${mnt_size}"G /mnt/mnt.img
