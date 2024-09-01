@@ -21,7 +21,7 @@ on:
       openwrt_board:
         description: "Select device board"
         required: false
-        default: "all"
+        default: "s905x3-h96max"
         type: choice
         options:
           - all
@@ -170,7 +170,7 @@ on:
       openwrt_kernel:
         description: "Select kernel version"
         required: false
-        default: "6.1.y_6.6.y"
+        default: "6.6.y"
         type: choice
         options:
           - 5.4.y
@@ -229,7 +229,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: self-hosted
     if: ${{ github.event.repository.owner.id }} == ${{ github.event.sender.id }}
 
     steps:
@@ -241,7 +241,7 @@ jobs:
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
-          docker rmi $(docker images -q) 2>/dev/null
+          docker rmi $(docker images -q) 2>/dev/null | true
           [[ -n "${AGENT_TOOLSDIRECTORY}" ]] && sudo rm -rf "${AGENT_TOOLSDIRECTORY}"
           sudo rm -rf /usr/share/dotnet /etc/apt/sources.list.d /usr/local/lib/android 2>/dev/null
           sudo swapoff -a
@@ -260,6 +260,11 @@ jobs:
 
       - name: Create simulated physical disk
         run: |
+          sudo umount /builder | true
+          sudo lvremove /dev/github/runner | true
+          sudo losetup -D
+          [[ -f "/root.img" ]] && sudo rm -rf /root.img
+          [[ -f "/mnt/mnt.img" ]] && sudo rm -rf /mnt/mnt.img
           mnt_size=$(expr $(df -h /mnt | tail -1 | awk '{print $4}' | sed 's/[[:alpha:]]//g' | sed 's/\..*//') - 1)
           root_size=$(expr $(df -h / | tail -1 | awk '{print $4}' | sed 's/[[:alpha:]]//g' | sed 's/\..*//') - 4)
           sudo truncate -s "${mnt_size}"G /mnt/mnt.img
@@ -284,7 +289,7 @@ jobs:
           # Set up compilation source code
           if [[ "${{ inputs.source_branch }}" == *"openwrt"* ]]; then
               REPO_URL="https://github.com/openwrt/openwrt"
-              REPO_BRANCH="main"
+              REPO_BRANCH="openwrt-23.05"
               TAGS_NAME="official"
           elif [[ "${{ inputs.source_branch }}" == *"lede"* ]]; then
               REPO_URL="https://github.com/coolsnowwolf/lede"
@@ -302,7 +307,7 @@ jobs:
           # Clone source code
           git clone -q --single-branch --depth=1 --branch=${REPO_BRANCH} ${REPO_URL} openwrt
           ln -sf /builder/openwrt ${GITHUB_WORKSPACE}/openwrt
-          ln -sf /builder/openwrt /home/runner/work/_actions/ophub/amlogic-s9xxx-openwrt/main/openwrt
+          ln -sf /builder/openwrt /home/runner/actions-runner/_work/_actions/ophub/amlogic-s9xxx-openwrt/main/openwrt
 
           # Set output information
           echo "build_tag=OpenWrt_${TAGS_NAME}_${{ inputs.openwrt_storage }}_$(date +"%Y.%m")" >> ${GITHUB_OUTPUT}
