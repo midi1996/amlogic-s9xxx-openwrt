@@ -21,7 +21,7 @@ on:
       openwrt_board:
         description: "Select device board"
         required: false
-        default: "all"
+        default: "s905x3-h96max"
         type: choice
         options:
           - all
@@ -177,7 +177,7 @@ on:
       openwrt_kernel:
         description: "Select kernel version"
         required: false
-        default: "6.1.y_6.6.y"
+        default: "6.6.y"
         type: choice
         options:
           - 5.4.y
@@ -236,7 +236,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: self-hosted
     if: ${{ github.event.repository.owner.id }} == ${{ github.event.sender.id }}
 
     steps:
@@ -248,7 +248,7 @@ jobs:
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
-          docker rmi $(docker images -q) 2>/dev/null
+          docker rmi $(docker images -q) 2>/dev/null | true
           [[ -n "${AGENT_TOOLSDIRECTORY}" ]] && sudo rm -rf "${AGENT_TOOLSDIRECTORY}"
           sudo rm -rf /usr/share/dotnet /etc/apt/sources.list.d /usr/local/lib/android 2>/dev/null
           sudo swapoff -a
@@ -267,6 +267,11 @@ jobs:
 
       - name: Create simulated physical disk
         run: |
+          sudo umount /builder | true
+          sudo lvremove /dev/github/runner | true
+          sudo losetup -D
+          [[ -f "/root.img" ]] && sudo rm -rf /root.img
+          [[ -f "/mnt/mnt.img" ]] && sudo rm -rf /mnt/mnt.img
           mnt_size=$(expr $(df -h /mnt | tail -1 | awk '{print $4}' | sed 's/[[:alpha:]]//g' | sed 's/\..*//') - 1)
           root_size=$(expr $(df -h / | tail -1 | awk '{print $4}' | sed 's/[[:alpha:]]//g' | sed 's/\..*//') - 4)
           sudo truncate -s "${mnt_size}"G /mnt/mnt.img
