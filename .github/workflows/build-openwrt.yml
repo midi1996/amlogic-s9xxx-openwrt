@@ -268,7 +268,7 @@ jobs:
       - name: Create simulated physical disk
         run: |
           sudo umount /builder | true
-          sudo lvremove /dev/github/runner | true
+          sudo lvremove /dev/github/runner -y | true
           sudo losetup -D
           [[ -f "/root.img" ]] && sudo rm -rf /root.img
           [[ -f "/mnt/mnt.img" ]] && sudo rm -rf /mnt/mnt.img
